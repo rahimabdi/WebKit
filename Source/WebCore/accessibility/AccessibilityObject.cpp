@@ -202,6 +202,9 @@ OptionSet<AXAncestorFlag> AccessibilityObject::computeAncestorFlags() const
     if (hasAncestorFlag(AXAncestorFlag::IsInRow) || matchesAncestorFlag(AXAncestorFlag::IsInRow))
         computedFlags.set(AXAncestorFlag::IsInRow, 1);
 
+    if (hasAncestorFlag(AXAncestorFlag::HasARIAHiddenAncestor) || matchesAncestorFlag(AXAncestorFlag::HasARIAHiddenAncestor))
+        computedFlags.set(AXAncestorFlag::HasARIAHiddenAncestor, 1);
+
     return computedFlags;
 }
 
@@ -240,6 +243,13 @@ bool AccessibilityObject::matchesAncestorFlag(AXAncestorFlag flag) const
         return role == AccessibilityRole::Cell;
     case AXAncestorFlag::IsInRow:
         return role == AccessibilityRole::Row;
+    case AXAncestorFlag::HasARIAHiddenAncestor: {
+        return Accessibility::findAncestor<AccessibilityObject>(*this, /* includeSelf */ false, [](const AccessibilityObject& object) {
+            if (equalLettersIgnoringASCIICase(object.getAttribute(aria_hiddenAttr), "true"_s))
+                return true;
+        return false;
+        });
+    }
     default:
         ASSERT_NOT_REACHED();
         return false;
@@ -302,6 +312,14 @@ bool AccessibilityObject::isInRow() const
         return m_ancestorFlags.contains(AXAncestorFlag::IsInRow);
 
     return hasAncestorMatchingFlag(AXAncestorFlag::IsInRow);
+}
+
+bool AccessibilityObject::hasARIAHiddenAncestor() const
+{
+    if (ancestorFlagsAreInitialized())
+        return m_ancestorFlags.contains(AXAncestorFlag::HasARIAHiddenAncestor);
+
+    return hasAncestorMatchingFlag(AXAncestorFlag::HasARIAHiddenAncestor);
 }
 
 // ARIA marks elements as having their accessible name derive from either their contents, or their author provide name.
