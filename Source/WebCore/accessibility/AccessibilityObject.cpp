@@ -3962,6 +3962,11 @@ bool AccessibilityObject::isAXHidden() const
     if (isFocused())
         return false;
 
+    // To prevent authors from hiding interactive (focusable) elements, aria-hidden
+    // should be ignored on such elements.
+    if (isImplicitlyInteractive() || hasClickHandler())
+        return false;
+
     return Accessibility::findAncestor<AccessibilityObject>(*this, true, [] (const auto& object) {
         return object.isARIAHidden();
     }) != nullptr;
