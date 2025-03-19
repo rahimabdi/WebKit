@@ -243,13 +243,10 @@ bool AccessibilityObject::matchesAncestorFlag(AXAncestorFlag flag) const
         return role == AccessibilityRole::Cell;
     case AXAncestorFlag::IsInRow:
         return role == AccessibilityRole::Row;
-    case AXAncestorFlag::HasARIAHiddenAncestor: {
-        return Accessibility::findAncestor<AccessibilityObject>(*this, /* includeSelf */ false, [](const AccessibilityObject& object) {
-            if (equalLettersIgnoringASCIICase(object.getAttribute(aria_hiddenAttr), "true"_s))
-                return true;
+    case AXAncestorFlag::HasARIAHiddenAncestor:
+        if (equalLettersIgnoringASCIICase(getAttribute(aria_hiddenAttr), "true"_s))
+            return true;
         return false;
-        });
-    }
     default:
         ASSERT_NOT_REACHED();
         return false;
@@ -3982,7 +3979,7 @@ bool AccessibilityObject::isAXHidden() const
 
     // To prevent authors from hiding interactive (focusable) elements, aria-hidden
     // should be ignored on such elements.
-    if (isImplicitlyInteractive() || hasClickHandler())
+    if (isImplicitlyInteractive())
         return false;
 
     return Accessibility::findAncestor<AccessibilityObject>(*this, true, [] (const auto& object) {
