@@ -98,6 +98,7 @@ public:
     bool isInDescriptionListTerm() const final;
     bool isInCell() const final;
     bool isInRow() const;
+    bool hasARIAHiddenAncestor() const;
 
     bool isDetached() const override;
 

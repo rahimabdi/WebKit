@@ -124,8 +124,7 @@ enum class AXAncestorFlag : uint8_t {
     IsInDescriptionListTerm = 1 << 4,
     IsInCell = 1 << 5,
     IsInRow = 1 << 6,
-
-    // Bit 7 is free.
+    HasARIAHiddenAncestor = 1 << 7,
 };
 
 enum class AccessibilityRole : uint8_t {
