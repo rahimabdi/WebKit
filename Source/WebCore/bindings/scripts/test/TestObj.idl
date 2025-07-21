@@ -46,6 +46,8 @@ enum TestObjKind { "quick", "dead" };
 enum ObjSize { "small", "much-much-larger" };
 enum TestConfidence { "high", "kinda-low" };
 
+[MissingValueDefault="value1", InvalidValueDefault="value2"] enum attributeValues { "value1", "value2", "value3", "" };
+
 [
     InterfaceName=TestObject,
     Exposed=(Window,Worker)
@@ -103,6 +105,8 @@ enum TestConfidence { "high", "kinda-low" };
 
     // Reflected DOM attributes
     [Reflect] attribute DOMString reflectedStringAttr;
+    [Reflect] attribute DOMString? reflectedNullableStringAttr;
+    [Reflect, Enumerated=attributeValues] attribute DOMString? reflectedNullableEnumStringAttr;
     [Reflect] attribute USVString reflectedUSVStringAttr;
     [Reflect] attribute long reflectedIntegralAttr;
     [Reflect] attribute unsigned long reflectedUnsignedIntegralAttr;
@@ -112,6 +116,7 @@ enum TestConfidence { "high", "kinda-low" };
     [Reflect, URL] attribute DOMString reflectedURLAttr;
     [Reflect, URL] attribute USVString reflectedUSVURLAttr;
     [Reflect=customContentStringAttr] attribute DOMString reflectedStringAttr;
+    [Reflect=customContentStringAttr] attribute DOMString? reflectedNullableStringAttr;
     [Reflect=customContentIntegralAttr] attribute long reflectedCustomIntegralAttr;
     [Reflect=customContentBooleanAttr] attribute boolean reflectedCustomBooleanAttr;
     [Reflect=customContentURLAttr, URL] attribute DOMString reflectedCustomURLAttr;

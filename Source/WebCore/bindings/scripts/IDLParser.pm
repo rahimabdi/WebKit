@@ -2401,6 +2401,10 @@ sub parseExtendedAttributeRest2
         $self->assertTokenValue($self->getToken(), "*", __LINE__);
         return "*";
     }
+    if ($next->type() == StringToken) {
+        my $token = $self->getToken();
+        return $token->value();
+    }
     if ($next->type() == IdentifierToken) {
         my $name = $self->parseName();
         return $self->parseExtendedAttributeRest3($name);

@@ -539,6 +539,52 @@ template<> ASCIILiteral expectedEnumerationValues<TestObj::Confidence>()
     return "\"high\", \"kinda-low\""_s;
 }
 
+String convertEnumerationToString(TestObj::AttributeValues enumerationValue)
+{
+    static const std::array<NeverDestroyed<String>, 4> values {
+        MAKE_STATIC_STRING_IMPL("value1"),
+        MAKE_STATIC_STRING_IMPL("value2"),
+        MAKE_STATIC_STRING_IMPL("value3"),
+        emptyString(),
+    };
+    static_assert(static_cast<size_t>(TestObj::AttributeValues::Value1) == 0, "TestObj::AttributeValues::Value1 is not 0 as expected");
+    static_assert(static_cast<size_t>(TestObj::AttributeValues::Value2) == 1, "TestObj::AttributeValues::Value2 is not 1 as expected");
+    static_assert(static_cast<size_t>(TestObj::AttributeValues::Value3) == 2, "TestObj::AttributeValues::Value3 is not 2 as expected");
+    static_assert(static_cast<size_t>(TestObj::AttributeValues::EmptyString) == 3, "TestObj::AttributeValues::EmptyString is not 3 as expected");
+    ASSERT(static_cast<size_t>(enumerationValue) < std::size(values));
+    return values[static_cast<size_t>(enumerationValue)];
+}
+
+template<> JSString* convertEnumerationToJS(VM& vm, TestObj::AttributeValues enumerationValue)
+{
+    return jsStringWithCache(vm, convertEnumerationToString(enumerationValue));
+}
+
+template<> std::optional<TestObj::AttributeValues> parseEnumerationFromString<TestObj::AttributeValues>(const String& stringValue)
+{
+    if (stringValue.isEmpty())
+        return TestObj::AttributeValues::EmptyString;
+    static constexpr std::array<std::pair<ComparableASCIILiteral, TestObj::AttributeValues>, 3> mappings {
+        std::pair<ComparableASCIILiteral, TestObj::AttributeValues> { "value1"_s, TestObj::AttributeValues::Value1 },
+        std::pair<ComparableASCIILiteral, TestObj::AttributeValues> { "value2"_s, TestObj::AttributeValues::Value2 },
+        std::pair<ComparableASCIILiteral, TestObj::AttributeValues> { "value3"_s, TestObj::AttributeValues::Value3 },
+    };
+    static constexpr SortedArrayMap enumerationMapping { mappings };
+    if (auto* enumerationValue = enumerationMapping.tryGet(stringValue); enumerationValue) [[likely]]
+        return *enumerationValue;
+    return std::nullopt;
+}
+
+template<> std::optional<TestObj::AttributeValues> parseEnumeration<TestObj::AttributeValues>(JSGlobalObject& lexicalGlobalObject, JSValue value)
+{
+    return parseEnumerationFromString<TestObj::AttributeValues>(value.toWTFString(&lexicalGlobalObject));
+}
+
+template<> ASCIILiteral expectedEnumerationValues<TestObj::AttributeValues>()
+{
+    return "\"value1\", \"value2\", \"value3\", \"\""_s;
+}
+
 template<> ConversionResult<IDLDictionary<TestObj::Dictionary>> convertDictionary<TestObj::Dictionary>(JSGlobalObject& lexicalGlobalObject, JSValue value)
 {
     SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
@@ -1977,6 +2023,10 @@ static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_create);
 static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_create);
 static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedStringAttr);
 static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_reflectedStringAttr);
+static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedNullableStringAttr);
+static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_reflectedNullableStringAttr);
+static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedNullableEnumStringAttr);
+static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_reflectedNullableEnumStringAttr);
 static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedUSVStringAttr);
 static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_reflectedUSVStringAttr);
 static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedIntegralAttr);
@@ -1995,6 +2045,8 @@ static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedUSVURLAttr);
 static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_reflectedUSVURLAttr);
 static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedStringAttr);
 static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_reflectedStringAttr);
+static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedNullableStringAttr);
+static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_reflectedNullableStringAttr);
 static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedCustomIntegralAttr);
 static JSC_DECLARE_CUSTOM_SETTER(setJSTestObj_reflectedCustomIntegralAttr);
 static JSC_DECLARE_CUSTOM_GETTER(jsTestObj_reflectedCustomBooleanAttr);
@@ -2346,7 +2398,7 @@ template<> void JSTestObjDOMConstructor::initializeProperties(VM& vm, JSDOMGloba
 
 /* Hash table for prototype */
 
-static const std::array<HashTableValue, 285> JSTestObjPrototypeTableValues {
+static const std::array<HashTableValue, 288> JSTestObjPrototypeTableValues {
     HashTableValue { "constructor"_s, static_cast<unsigned>(PropertyAttribute::DontEnum), NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObjConstructor, 0 } },
     HashTableValue { "readOnlyLongAttr"_s, JSC::PropertyAttribute::ReadOnly | JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_readOnlyLongAttr, 0 } },
     HashTableValue { "readOnlyStringAttr"_s, JSC::PropertyAttribute::ReadOnly | JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_readOnlyStringAttr, 0 } },
@@ -2386,6 +2438,8 @@ static const std::array<HashTableValue, 285> JSTestObjPrototypeTableValues {
     HashTableValue { "XMLObjAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_XMLObjAttr, setJSTestObj_XMLObjAttr } },
     HashTableValue { "create"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_create, setJSTestObj_create } },
     HashTableValue { "reflectedStringAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedStringAttr, setJSTestObj_reflectedStringAttr } },
+    HashTableValue { "reflectedNullableStringAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedNullableStringAttr, setJSTestObj_reflectedNullableStringAttr } },
+    HashTableValue { "reflectedNullableEnumStringAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedNullableEnumStringAttr, setJSTestObj_reflectedNullableEnumStringAttr } },
     HashTableValue { "reflectedUSVStringAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedUSVStringAttr, setJSTestObj_reflectedUSVStringAttr } },
     HashTableValue { "reflectedIntegralAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedIntegralAttr, setJSTestObj_reflectedIntegralAttr } },
     HashTableValue { "reflectedUnsignedIntegralAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedUnsignedIntegralAttr, setJSTestObj_reflectedUnsignedIntegralAttr } },
@@ -2395,6 +2449,7 @@ static const std::array<HashTableValue, 285> JSTestObjPrototypeTableValues {
     HashTableValue { "reflectedURLAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedURLAttr, setJSTestObj_reflectedURLAttr } },
     HashTableValue { "reflectedUSVURLAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedUSVURLAttr, setJSTestObj_reflectedUSVURLAttr } },
     HashTableValue { "reflectedStringAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedStringAttr, setJSTestObj_reflectedStringAttr } },
+    HashTableValue { "reflectedNullableStringAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedNullableStringAttr, setJSTestObj_reflectedNullableStringAttr } },
     HashTableValue { "reflectedCustomIntegralAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedCustomIntegralAttr, setJSTestObj_reflectedCustomIntegralAttr } },
     HashTableValue { "reflectedCustomBooleanAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedCustomBooleanAttr, setJSTestObj_reflectedCustomBooleanAttr } },
     HashTableValue { "reflectedCustomURLAttr"_s, JSC::PropertyAttribute::CustomAccessor | JSC::PropertyAttribute::DOMAttribute, NoIntrinsic, { HashTableValue::GetterSetterType, jsTestObj_reflectedCustomURLAttr, setJSTestObj_reflectedCustomURLAttr } },
@@ -4261,6 +4316,72 @@ JSC_DEFINE_CUSTOM_SETTER(setJSTestObj_reflectedStringAttr, (JSGlobalObject* lexi
     return IDLAttribute<JSTestObj>::set<setJSTestObj_reflectedStringAttrSetter>(*lexicalGlobalObject, thisValue, encodedValue, attributeName);
 }
 
+static inline JSValue jsTestObj_reflectedNullableStringAttrGetter(JSGlobalObject& lexicalGlobalObject, JSTestObj& thisObject)
+{
+    SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
+    auto throwScope = DECLARE_THROW_SCOPE(vm);
+    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();
+    RELEASE_AND_RETURN(throwScope, (toJS<IDLNullable<IDLAtomStringAdaptor<IDLDOMString>>>(lexicalGlobalObject, throwScope, impl.attributeWithoutSynchronization(WebCore::HTMLNames::reflectednullablestringattrAttr))));
+}
+
+JSC_DEFINE_CUSTOM_GETTER(jsTestObj_reflectedNullableStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, PropertyName attributeName))
+{
+    return IDLAttribute<JSTestObj>::get<jsTestObj_reflectedNullableStringAttrGetter, CastedThisErrorBehavior::Assert>(*lexicalGlobalObject, thisValue, attributeName);
+}
+
+static inline bool setJSTestObj_reflectedNullableStringAttrSetter(JSGlobalObject& lexicalGlobalObject, JSTestObj& thisObject, JSValue value)
+{
+    SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
+    UNUSED_PARAM(vm);
+    auto throwScope = DECLARE_THROW_SCOPE(vm);
+    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();
+    auto nativeValueConversionResult = convert<IDLNullable<IDLAtomStringAdaptor<IDLDOMString>>>(lexicalGlobalObject, value);
+    if (nativeValueConversionResult.hasException(throwScope)) [[unlikely]]
+        return false;
+    invokeFunctorPropagatingExceptionIfNecessary(lexicalGlobalObject, throwScope, [&] {
+        return impl.setAttributeWithoutSynchronization(WebCore::HTMLNames::reflectednullablestringattrAttr, nativeValueConversionResult.releaseReturnValue());
+    });
+    return true;
+}
+
+JSC_DEFINE_CUSTOM_SETTER(setJSTestObj_reflectedNullableStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, EncodedJSValue encodedValue, PropertyName attributeName))
+{
+    return IDLAttribute<JSTestObj>::set<setJSTestObj_reflectedNullableStringAttrSetter>(*lexicalGlobalObject, thisValue, encodedValue, attributeName);
+}
+
+static inline JSValue jsTestObj_reflectedNullableEnumStringAttrGetter(JSGlobalObject& lexicalGlobalObject, JSTestObj& thisObject)
+{
+    SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
+    auto throwScope = DECLARE_THROW_SCOPE(vm);
+    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();
+    RELEASE_AND_RETURN(throwScope, (toJS<IDLNullable<IDLAtomStringAdaptor<IDLDOMString>>>(lexicalGlobalObject, throwScope, impl.attributeWithoutSynchronization(WebCore::HTMLNames::reflectednullableenumstringattrAttr))));
+}
+
+JSC_DEFINE_CUSTOM_GETTER(jsTestObj_reflectedNullableEnumStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, PropertyName attributeName))
+{
+    return IDLAttribute<JSTestObj>::get<jsTestObj_reflectedNullableEnumStringAttrGetter, CastedThisErrorBehavior::Assert>(*lexicalGlobalObject, thisValue, attributeName);
+}
+
+static inline bool setJSTestObj_reflectedNullableEnumStringAttrSetter(JSGlobalObject& lexicalGlobalObject, JSTestObj& thisObject, JSValue value)
+{
+    SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
+    UNUSED_PARAM(vm);
+    auto throwScope = DECLARE_THROW_SCOPE(vm);
+    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();
+    auto nativeValueConversionResult = convert<IDLNullable<IDLAtomStringAdaptor<IDLDOMString>>>(lexicalGlobalObject, value);
+    if (nativeValueConversionResult.hasException(throwScope)) [[unlikely]]
+        return false;
+    invokeFunctorPropagatingExceptionIfNecessary(lexicalGlobalObject, throwScope, [&] {
+        return impl.setAttributeWithoutSynchronization(WebCore::HTMLNames::reflectednullableenumstringattrAttr, nativeValueConversionResult.releaseReturnValue());
+    });
+    return true;
+}
+
+JSC_DEFINE_CUSTOM_SETTER(setJSTestObj_reflectedNullableEnumStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, EncodedJSValue encodedValue, PropertyName attributeName))
+{
+    return IDLAttribute<JSTestObj>::set<setJSTestObj_reflectedNullableEnumStringAttrSetter>(*lexicalGlobalObject, thisValue, encodedValue, attributeName);
+}
+
 static inline JSValue jsTestObj_reflectedUSVStringAttrGetter(JSGlobalObject& lexicalGlobalObject, JSTestObj& thisObject)
 {
     SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
@@ -4556,6 +4677,39 @@ static inline bool setJSTestObj_reflectedStringAttrSetter(JSGlobalObject& lexica
 JSC_DEFINE_CUSTOM_SETTER(setJSTestObj_reflectedStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, EncodedJSValue encodedValue, PropertyName attributeName))
 {
     return IDLAttribute<JSTestObj>::set<setJSTestObj_reflectedStringAttrSetter>(*lexicalGlobalObject, thisValue, encodedValue, attributeName);
+}
+
+static inline JSValue jsTestObj_reflectedNullableStringAttrGetter(JSGlobalObject& lexicalGlobalObject, JSTestObj& thisObject)
+{
+    SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
+    auto throwScope = DECLARE_THROW_SCOPE(vm);
+    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();
+    RELEASE_AND_RETURN(throwScope, (toJS<IDLNullable<IDLAtomStringAdaptor<IDLDOMString>>>(lexicalGlobalObject, throwScope, impl.attributeWithoutSynchronization(WebCore::HTMLNames::customContentStringAttrAttr))));
+}
+
+JSC_DEFINE_CUSTOM_GETTER(jsTestObj_reflectedNullableStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, PropertyName attributeName))
+{
+    return IDLAttribute<JSTestObj>::get<jsTestObj_reflectedNullableStringAttrGetter, CastedThisErrorBehavior::Assert>(*lexicalGlobalObject, thisValue, attributeName);
+}
+
+static inline bool setJSTestObj_reflectedNullableStringAttrSetter(JSGlobalObject& lexicalGlobalObject, JSTestObj& thisObject, JSValue value)
+{
+    SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
+    UNUSED_PARAM(vm);
+    auto throwScope = DECLARE_THROW_SCOPE(vm);
+    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();
+    auto nativeValueConversionResult = convert<IDLNullable<IDLAtomStringAdaptor<IDLDOMString>>>(lexicalGlobalObject, value);
+    if (nativeValueConversionResult.hasException(throwScope)) [[unlikely]]
+        return false;
+    invokeFunctorPropagatingExceptionIfNecessary(lexicalGlobalObject, throwScope, [&] {
+        return impl.setAttributeWithoutSynchronization(WebCore::HTMLNames::customContentStringAttrAttr, nativeValueConversionResult.releaseReturnValue());
+    });
+    return true;
+}
+
+JSC_DEFINE_CUSTOM_SETTER(setJSTestObj_reflectedNullableStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, EncodedJSValue encodedValue, PropertyName attributeName))
+{
+    return IDLAttribute<JSTestObj>::set<setJSTestObj_reflectedNullableStringAttrSetter>(*lexicalGlobalObject, thisValue, encodedValue, attributeName);
 }
 
 static inline JSValue jsTestObj_reflectedCustomIntegralAttrGetter(JSGlobalObject& lexicalGlobalObject, JSTestObj& thisObject)

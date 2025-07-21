@@ -173,6 +173,11 @@
         "DoNotCheckSecurityOnSetter": {
             "contextsAllowed": ["attribute"]
         },
+        "EmptyValueDefault": {
+            "contextsAllowed": ["enum"],
+            "values": ["*"],
+            "notes" :"optional value default for enumerated content attributes when the attribute is present but without a value. Must be used only for content attributes that specify both [Reflect, Enumerated]"
+        },
         "EnabledByQuirk": {
             "contextsAllowed": ["interface", "dictionary", "enum", "attribute", "operation", "constant", "dictionary-member", "includes"],
             "values": ["*"],
@@ -201,6 +206,11 @@
             "standard": {
                 "url": "https://webidl.spec.whatwg.org/#EnforceRange"
             }
+        },
+        "Enumerated": {
+            "contextsAllowed": ["attribute"],
+            "values": ["*"],
+            "notes" : "Use via [Reflect] to specify that an attribute is limited to known values, e.g., Reflect, Enumerated=attributeAllowedValues] where attributeAllowedValues is an enum"
         },
         "Exception": {
             "contextsAllowed": ["interface"]
@@ -263,6 +273,11 @@
         "InterfaceName": {
             "contextsAllowed": ["interface", "namespace"],
             "values": ["*"]
+        },
+        "InvalidValueDefault": {
+            "contextsAllowed": ["enum"],
+            "values": ["*"],
+            "notes" :"Optional invalid value default for enumerated content attributes. Must be used only for content attributes that specify both [Reflect Enumerated]"
         },
         "IsImmutablePrototypeExoticObject": {
             "contextsAllowed": ["interface"]
@@ -377,6 +392,11 @@
         },
         "MasqueradesAsUndefined": {
             "contextsAllowed": ["interface"]
+        },
+        "MissingValueDefault": {
+            "contextsAllowed": ["enum"],
+            "values": ["*"],
+            "notes" :"Optional missing value default for enumerated content attributes. Must be used only for content attributes that specify both [Reflect Enumerated]"
         },
         "NewImpurePropertyFiresWatchpoints": {
             "contextsAllowed": ["interface"]

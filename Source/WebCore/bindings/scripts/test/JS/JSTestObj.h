@@ -205,6 +205,13 @@ template<> std::optional<TestObj::Confidence> parseEnumerationFromString<TestObj
 template<> std::optional<TestObj::Confidence> parseEnumeration<TestObj::Confidence>(JSC::JSGlobalObject&, JSC::JSValue);
 template<> ASCIILiteral expectedEnumerationValues<TestObj::Confidence>();
 
+String convertEnumerationToString(TestObj::AttributeValues);
+template<> JSC::JSString* convertEnumerationToJS(JSC::VM&, TestObj::AttributeValues);
+
+template<> std::optional<TestObj::AttributeValues> parseEnumerationFromString<TestObj::AttributeValues>(const String&);
+template<> std::optional<TestObj::AttributeValues> parseEnumeration<TestObj::AttributeValues>(JSC::JSGlobalObject&, JSC::JSValue);
+template<> ASCIILiteral expectedEnumerationValues<TestObj::AttributeValues>();
+
 template<> ConversionResult<IDLDictionary<TestObj::Dictionary>> convertDictionary<TestObj::Dictionary>(JSC::JSGlobalObject&, JSC::JSValue);
 
 JSC::JSObject* convertDictionaryToJS(JSC::JSGlobalObject&, JSDOMGlobalObject&, const TestObj::Dictionary&);
