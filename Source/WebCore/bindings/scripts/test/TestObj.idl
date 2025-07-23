@@ -46,7 +46,7 @@ enum TestObjKind { "quick", "dead" };
 enum ObjSize { "small", "much-much-larger" };
 enum TestConfidence { "high", "kinda-low" };
 
-[MissingValueDefault="value1", InvalidValueDefault="value2"] enum attributeValues { "value1", "value2", "value3", "" };
+[MissingValueDefault="value1", InvalidValueDefault="value2", EmptyValueDefault="value3"] enum attributeValues { "value1", "value2", "value3", "" };
 
 [
     InterfaceName=TestObject,

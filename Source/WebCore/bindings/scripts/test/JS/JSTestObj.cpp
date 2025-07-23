@@ -4354,7 +4354,7 @@ static inline JSValue jsTestObj_reflectedNullableEnumStringAttrGetter(JSGlobalOb
     SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
     auto throwScope = DECLARE_THROW_SCOPE(vm);
     SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();
-    RELEASE_AND_RETURN(throwScope, (toJS<IDLNullable<IDLAtomStringAdaptor<IDLDOMString>>>(lexicalGlobalObject, throwScope, impl.attributeWithoutSynchronization(WebCore::HTMLNames::reflectednullableenumstringattrAttr))));
+    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::VALUE_IS_MISSINGAttr);
 }
 
 JSC_DEFINE_CUSTOM_GETTER(jsTestObj_reflectedNullableEnumStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, PropertyName attributeName))

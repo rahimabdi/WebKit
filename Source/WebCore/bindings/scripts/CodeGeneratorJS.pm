@@ -5218,7 +5218,7 @@ sub GenerateImplementation
     }
 
     foreach my $attribute (@{$interface->extendedAttributes->{SyntheticIDLAttributes}}, @{$interface->attributes}) {
-        GenerateAttributeGetterDefinition(\@implContent, $interface, $className, $attribute);
+        GenerateAttributeGetterDefinition(\@implContent, $interface, $className, $attribute, $enumerations);
         GenerateAttributeSetterDefinition(\@implContent, $interface, $className, $attribute);
     }
 
@@ -5576,7 +5576,7 @@ sub GenerateForEachEventHandlerContentAttribute
 
 sub GenerateAttributeGetterBodyDefinition
 {
-    my ($outputArray, $interface, $className, $attribute, $attributeGetterBodyName, $conditional) = @_;
+    my ($outputArray, $interface, $className, $attribute, $attributeGetterBodyName, $conditional, $enumerations) = @_;
     
     my @signatureArguments = ();
     push(@signatureArguments, "JSGlobalObject& lexicalGlobalObject");
@@ -5670,23 +5670,73 @@ sub GenerateAttributeGetterBodyDefinition
         my $toJSExpression = NativeToJSValueUsingReferences($attribute, $interface, "${functionName}(" . join(", ", @arguments) . ")", $globalObjectReference);
         push(@$outputArray, "    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();\n") unless $attribute->isStatic or $attribute->extendedAttributes->{ForwardToMapLike} or $attribute->extendedAttributes->{ForwardToSetLike};
 
-        if (!IsReadonly($attribute)) {
-            my $callTracer = $attribute->extendedAttributes->{CallTracer} || $interface->extendedAttributes->{CallTracer};
-            if ($callTracer) {
-                my @callTracerArguments = ();
-                GenerateCallTracer($outputArray, $callTracer, $attribute->name, \@callTracerArguments, "    ");
-            }
-        }
 
-        if ($attribute->extendedAttributes->{CachedAttribute}) {
-            push(@$outputArray, "    JSValue result = ${toJSExpression};\n");
-            push(@$outputArray, "    RETURN_IF_EXCEPTION(throwScope, { });\n") if ($needThrowScope);
-            push(@$outputArray, "    thisObject.m_" . $attribute->name . ".set(JSC::getVM(&lexicalGlobalObject), &thisObject, result);\n");
-            push(@$outputArray, "    return result;\n");
-        } elsif ($needThrowScope) {
-            push(@$outputArray, "    RELEASE_AND_RETURN(throwScope, (${toJSExpression}));\n");
+#####----------------- BEGINNING OF MY GETTER UPDATE --------------------#########
+
+        if ($attribute->extendedAttributes->{Reflect} && $attribute->extendedAttributes->{Enumerated}) {
+            my $attributeName = $attribute->extendedAttributes->{Reflect};
+            my $enumNameForAttribute = $attribute->extendedAttributes->{Enumerated};
+            my $missingValueDefault;
+            my $invalidValueDefault;
+            my $emptyValueDefault;
+            my @enumValues = ();
+
+            unless ($enumNameForAttribute) {
+                die "The {$attributeName} attribute does not have a valid enum specified. Ensure proper usage, e.g., [Reflect, Enumerated=myEnum...]\n";
+            }
+
+            my $foundEnum = 0;
+            foreach my $enum (@$enumerations) {
+                next unless ref($enum) eq 'IDLEnum';
+                my $enumName = $enum->{'IDLEnum::name'};
+                if ($enumName eq $enumNameForAttribute) {
+                    my $enumExtendedAttributes = $enum->{'IDLEnum::extendedAttributes'};
+                    $missingValueDefault = $enumExtendedAttributes->{'MissingValueDefault'};
+                    $missingValueDefault = undef if !defined($missingValueDefault) || $missingValueDefault eq '"VALUE_IS_MISSING"';
+                    $invalidValueDefault = $enumExtendedAttributes->{'InvalidValueDefault'};
+                    $invalidValueDefault = undef if !defined($invalidValueDefault) || $invalidValueDefault eq '"VALUE_IS_MISSING"';
+                    $emptyValueDefault = $enumExtendedAttributes->{'EmptyValueDefault'};
+                    $emptyValueDefault = undef if !defined($emptyValueDefault) || $emptyValueDefault eq '"VALUE_IS_MISSING"';
+                    @enumValues = @{ $enum->{'IDLEnum::values'} };
+                    
+                    $foundEnum = 1;
+                    last;
+                }
+            }
+            unless ($foundEnum) {
+                die "The enum {$enumNameForAttribute} was not found in the defined enums.\n";
+            }
+
+            push(@$outputArray, "    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::${attributeName}Attr);\n");
+            push(@$outputArray, "    if (contentAttributeValue.isNull()) {\n");
+            if (defined $missingValueDefault) {
+                #RELEASE_AND_RETURN(throwScope, (toJS<IDLAtomStringAdaptor<IDLDOMString>>(lexicalGlobalObject, throwScope, AtomString("Value1"_s))));
+                push(@$outputArray, "    RELEASE_AND_RETURN(throwScope, (toJS<IDLAtomStringAdaptor<IDLDOMString>>(lexicalGlobalObject, throwScope, AtomString(\"" . $reflectMissing . "\"_s)));\n");
+            } else {
+
+            }
+
+#####----------------- END OF MY GETTER UPDATE --------------------#########
+
         } else {
-            push(@$outputArray, "    return ${toJSExpression};\n");
+            if (!IsReadonly($attribute)) {
+                my $callTracer = $attribute->extendedAttributes->{CallTracer} || $interface->extendedAttributes->{CallTracer};
+                if ($callTracer) {
+                    my @callTracerArguments = ();
+                    GenerateCallTracer($outputArray, $callTracer, $attribute->name, \@callTracerArguments, "    ");
+                }
+            }
+
+            if ($attribute->extendedAttributes->{CachedAttribute}) {
+                push(@$outputArray, "    JSValue result = ${toJSExpression};\n");
+                push(@$outputArray, "    RETURN_IF_EXCEPTION(throwScope, { });\n") if ($needThrowScope);
+                push(@$outputArray, "    thisObject.m_" . $attribute->name . ".set(JSC::getVM(&lexicalGlobalObject), &thisObject, result);\n");
+                push(@$outputArray, "    return result;\n");
+            } elsif ($needThrowScope) {
+                push(@$outputArray, "    RELEASE_AND_RETURN(throwScope, (${toJSExpression}));\n");
+            } else {
+                push(@$outputArray, "    return ${toJSExpression};\n");
+            }
         }
     }
     push(@$outputArray, "}\n\n");
@@ -5720,7 +5770,7 @@ sub GenerateAttributeGetterTrampolineDefinition
 
 sub GenerateAttributeGetterDefinition
 {
-    my ($outputArray, $interface, $className, $attribute) = @_;
+    my ($outputArray, $interface, $className, $attribute, $enumerations) = @_;
 
     return if IsJSBuiltin($interface, $attribute);
     return if $attribute->extendedAttributes->{DelegateToSharedSyntheticAttribute};
@@ -5734,7 +5784,7 @@ sub GenerateAttributeGetterDefinition
         push(@$outputArray, "#if ${conditionalString}\n");;
     }
     
-    GenerateAttributeGetterBodyDefinition($outputArray, $interface, $className, $attribute, $attributeGetterBodyName, $conditional);
+    GenerateAttributeGetterBodyDefinition($outputArray, $interface, $className, $attribute, $attributeGetterBodyName, $conditional, $enumerations);
     GenerateAttributeGetterTrampolineDefinition($outputArray, $interface, $className, $attribute, $attributeGetterName, $attributeGetterBodyName, $conditional);
     
     push(@$outputArray, "#endif\n\n") if $conditional;
