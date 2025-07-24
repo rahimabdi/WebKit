@@ -5670,7 +5670,6 @@ sub GenerateAttributeGetterBodyDefinition
         my $toJSExpression = NativeToJSValueUsingReferences($attribute, $interface, "${functionName}(" . join(", ", @arguments) . ")", $globalObjectReference);
         push(@$outputArray, "    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();\n") unless $attribute->isStatic or $attribute->extendedAttributes->{ForwardToMapLike} or $attribute->extendedAttributes->{ForwardToSetLike};
 
-
 #####----------------- BEGINNING OF MY GETTER UPDATE --------------------#########
 
         if ($attribute->extendedAttributes->{Reflect} && $attribute->extendedAttributes->{Enumerated}) {
@@ -5707,7 +5706,7 @@ sub GenerateAttributeGetterBodyDefinition
                 die "The enum {$enumNameForAttribute} was not found in the defined enums.\n";
             }
 
-            push(@$outputArray, "    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::${attributeName}Attr);\n");
+            ``push(@$outputArray, "    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::${attributeName}Attr);\n");``
             push(@$outputArray, "    if (contentAttributeValue.isNull()) {\n");
             if (defined $missingValueDefault) {
                 #RELEASE_AND_RETURN(throwScope, (toJS<IDLAtomStringAdaptor<IDLDOMString>>(lexicalGlobalObject, throwScope, AtomString("Value1"_s))));
