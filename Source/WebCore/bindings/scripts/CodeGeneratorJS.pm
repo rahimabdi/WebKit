@@ -5670,10 +5670,9 @@ sub GenerateAttributeGetterBodyDefinition
         my $toJSExpression = NativeToJSValueUsingReferences($attribute, $interface, "${functionName}(" . join(", ", @arguments) . ")", $globalObjectReference);
         push(@$outputArray, "    SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();\n") unless $attribute->isStatic or $attribute->extendedAttributes->{ForwardToMapLike} or $attribute->extendedAttributes->{ForwardToSetLike};
 
-#####----------------- BEGINNING OF MY GETTER UPDATE --------------------#########
-
         if ($attribute->extendedAttributes->{Reflect} && $attribute->extendedAttributes->{Enumerated}) {
             my $attributeName = $attribute->extendedAttributes->{Reflect};
+            $attributeName = $attribute->name if !$attributeName || $attributeName eq "VALUE_IS_MISSING";
             my $enumNameForAttribute = $attribute->extendedAttributes->{Enumerated};
             my $missingValueDefault;
             my $invalidValueDefault;
@@ -5706,36 +5705,54 @@ sub GenerateAttributeGetterBodyDefinition
                 die "The enum {$enumNameForAttribute} was not found in the defined enums.\n";
             }
 
-            ``push(@$outputArray, "    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::${attributeName}Attr);\n");``
-            push(@$outputArray, "    if (contentAttributeValue.isNull()) {\n");
+            push(@$outputArray, "    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::${attributeName}Attr);\n");
+            push(@$outputArray, "    AtomString returnValue;\n");
+            push(@$outputArray, "    if (contentAttributeValue.isNull())\n");
             if (defined $missingValueDefault) {
-                #RELEASE_AND_RETURN(throwScope, (toJS<IDLAtomStringAdaptor<IDLDOMString>>(lexicalGlobalObject, throwScope, AtomString("Value1"_s))));
-                push(@$outputArray, "    RELEASE_AND_RETURN(throwScope, (toJS<IDLAtomStringAdaptor<IDLDOMString>>(lexicalGlobalObject, throwScope, AtomString(\"" . $reflectMissing . "\"_s)));\n");
+                push(@$outputArray, "        returnValue = AtomString(\"$missingValueDefault\"_s);\n");
             } else {
-
+                push(@$outputArray, "        returnValue = nullAtom();\n");
             }
 
-#####----------------- END OF MY GETTER UPDATE --------------------#########
+            if (defined $emptyValueDefault) {
+                push(@$outputArray, "    else if (contentAttributeValue.isEmpty())\n");
+                push(@$outputArray, "        returnValue = AtomString(\"$emptyValueDefault\"_s);\n");
+            }
 
+            my $firstEnumValue = shift @enumValues;
+            push @$outputArray, "    else if (equalLettersIgnoringASCIICase(contentAttributeValue, \"$firstEnumValue\"_s))\n";
+            push @$outputArray, "        returnValue = AtomString(\"$firstEnumValue\"_s);\n";
+            for my $value (@enumValues) {
+                push @$outputArray, "    else if (equalLettersIgnoringASCIICase(contentAttributeValue, \"$value\"_s))\n";
+                push @$outputArray, "        returnValue = AtomString(\"$value\"_s);\n";
+            }
+            
+            push(@$outputArray, "    else\n");
+            if (defined $invalidValueDefault) {
+                push(@$outputArray, "        returnValue = AtomString(\"$invalidValueDefault\"_s);\n");
+            } else {
+                push(@$outputArray, "        returnValue = nullAtom();\n");
+            }
+            $toJSExpression = NativeToJSValueUsingReferences($attribute, $interface, "returnValue", $globalObjectReference);
+        }
+
+        if (!IsReadonly($attribute)) {
+            my $callTracer = $attribute->extendedAttributes->{CallTracer} || $interface->extendedAttributes->{CallTracer};
+            if ($callTracer) {
+                my @callTracerArguments = ();
+                GenerateCallTracer($outputArray, $callTracer, $attribute->name, \@callTracerArguments, "    ");
+            }
+        }
+
+        if ($attribute->extendedAttributes->{CachedAttribute}) {
+            push(@$outputArray, "    JSValue result = ${toJSExpression};\n");
+            push(@$outputArray, "    RETURN_IF_EXCEPTION(throwScope, { });\n") if ($needThrowScope);
+            push(@$outputArray, "    thisObject.m_" . $attribute->name . ".set(JSC::getVM(&lexicalGlobalObject), &thisObject, result);\n");
+            push(@$outputArray, "    return result;\n");
+        } elsif ($needThrowScope) {
+            push(@$outputArray, "    RELEASE_AND_RETURN(throwScope, (${toJSExpression}));\n");
         } else {
-            if (!IsReadonly($attribute)) {
-                my $callTracer = $attribute->extendedAttributes->{CallTracer} || $interface->extendedAttributes->{CallTracer};
-                if ($callTracer) {
-                    my @callTracerArguments = ();
-                    GenerateCallTracer($outputArray, $callTracer, $attribute->name, \@callTracerArguments, "    ");
-                }
-            }
-
-            if ($attribute->extendedAttributes->{CachedAttribute}) {
-                push(@$outputArray, "    JSValue result = ${toJSExpression};\n");
-                push(@$outputArray, "    RETURN_IF_EXCEPTION(throwScope, { });\n") if ($needThrowScope);
-                push(@$outputArray, "    thisObject.m_" . $attribute->name . ".set(JSC::getVM(&lexicalGlobalObject), &thisObject, result);\n");
-                push(@$outputArray, "    return result;\n");
-            } elsif ($needThrowScope) {
-                push(@$outputArray, "    RELEASE_AND_RETURN(throwScope, (${toJSExpression}));\n");
-            } else {
-                push(@$outputArray, "    return ${toJSExpression};\n");
-            }
+            push(@$outputArray, "    return ${toJSExpression};\n");
         }
     }
     push(@$outputArray, "}\n\n");

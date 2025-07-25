@@ -4354,7 +4354,23 @@ static inline JSValue jsTestObj_reflectedNullableEnumStringAttrGetter(JSGlobalOb
     SUPPRESS_UNCOUNTED_LOCAL auto& vm = JSC::getVM(&lexicalGlobalObject);
     auto throwScope = DECLARE_THROW_SCOPE(vm);
     SUPPRESS_UNCOUNTED_LOCAL auto& impl = thisObject.wrapped();
-    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::VALUE_IS_MISSINGAttr);
+    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::reflectedNullableEnumStringAttrAttr);
+    AtomString returnValue;
+    if (contentAttributeValue.isNull())
+        returnValue = AtomString("value1"_s);
+    else if (contentAttributeValue.isEmpty())
+        returnValue = AtomString("value3"_s);
+    else if (equalLettersIgnoringASCIICase(contentAttributeValue, "value1"_s))
+        returnValue = AtomString("value1"_s);
+    else if (equalLettersIgnoringASCIICase(contentAttributeValue, "value2"_s))
+        returnValue = AtomString("value2"_s);
+    else if (equalLettersIgnoringASCIICase(contentAttributeValue, "value3"_s))
+        returnValue = AtomString("value3"_s);
+    else if (equalLettersIgnoringASCIICase(contentAttributeValue, ""_s))
+        returnValue = AtomString(""_s);
+    else
+        returnValue = AtomString("value2"_s);
+    RELEASE_AND_RETURN(throwScope, (toJS<IDLNullable<IDLAtomStringAdaptor<IDLDOMString>>>(lexicalGlobalObject, throwScope, returnValue)));
 }
 
 JSC_DEFINE_CUSTOM_GETTER(jsTestObj_reflectedNullableEnumStringAttr, (JSGlobalObject* lexicalGlobalObject, EncodedJSValue thisValue, PropertyName attributeName))

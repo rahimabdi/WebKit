@@ -2403,7 +2403,9 @@ sub parseExtendedAttributeRest2
     }
     if ($next->type() == StringToken) {
         my $token = $self->getToken();
-        return $token->value();
+        my $value = $token->value();
+        $value =~ s/^"(.*)"$/$1/;
+        return $value;
     }
     if ($next->type() == IdentifierToken) {
         my $name = $self->parseName();
