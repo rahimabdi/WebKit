@@ -210,7 +210,7 @@
         "Enumerated": {
             "contextsAllowed": ["attribute"],
             "values": ["*"],
-            "notes" : "Use via [Reflect] to specify that an attribute is limited to known values, e.g., Reflect, Enumerated=attributeAllowedValues] where attributeAllowedValues is an enum"
+            "notes" : "Use via [Reflect] to specify that an attribute is limited to known values, e.g., [Reflect, Enumerated=attributeAllowedValues] where attributeAllowedValues is an enum"
         },
         "Exception": {
             "contextsAllowed": ["interface"]
