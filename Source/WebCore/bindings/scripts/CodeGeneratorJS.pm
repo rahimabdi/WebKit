@@ -5954,6 +5954,7 @@ sub GenerateAttributeSetterBodyDefinition
 
             my $toNativeExpression = JSValueToNative($interface, $attribute, "value", $attribute->extendedAttributes->{Conditional}, "&lexicalGlobalObject", "lexicalGlobalObject", "thisObject", $globalObjectReference, $exceptionThrower);
             push(@$outputArray, "    auto nativeValueConversionResult = ${toNativeExpression};\n");
+
             push(@$outputArray, "    if (nativeValueConversionResult.hasException(throwScope)) [[unlikely]]\n");
             push(@$outputArray, "        return false;\n");
 
