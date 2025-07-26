@@ -5683,6 +5683,27 @@ sub GenerateAttributeGetterBodyDefinition
                 die "The {$attributeName} attribute does not have a valid enum specified. Ensure proper usage, e.g., [Reflect, Enumerated=myEnum...]\n";
             }
 
+            ###NEW STUFF
+
+            print Dumper($codeGenerator);
+            my $test = new IDLType({
+                name => $enumNameForAttribute
+            });
+            print "\n\ENUM IS = {$enumNameForAttribute}\n\n";
+
+            my $enum = $codeGenerator->GetEnumByName($enumNameForAttribute);
+
+            if ($enum) {
+                print "✅ Enum found: ", $enum->type->name, "\n";
+                print "Values: ", join(", ", @{$enum->values}), "\n";
+            } else {
+                print "❌ Enum not found for $enumNameForAttribute\n";
+            }
+
+            ###NEW STUFF
+
+            die "done";
+
             my $foundEnum = 0;
             foreach my $enum (@$enumerations) {
                 next unless ref($enum) eq 'IDLEnum';

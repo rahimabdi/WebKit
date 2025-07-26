@@ -755,6 +755,34 @@ sub GetEnumByType
     $cachedExternalEnumerations->{$name} = undef;
 }
 
+sub GetEnumByName
+{
+    my ($object, $enumName) = @_;
+
+    # First check any cached enums
+    return $cachedExternalEnumerations->{$enumName} if exists($cachedExternalEnumerations->{$enumName});
+
+    # Search all known IDL files (slow path, only done once per name)
+    foreach my $filename (glob("Source/WebCore/Modules/**/*.idl"), glob("Source/WebCore/dom/**/*.idl")) {
+        my $fileContents = slurp($filename);
+        next unless $fileContents =~ /\benum\s+$enumName\b/;
+
+        my $parser = IDLParser->new(1);
+        my $document = $parser->Parse($filename, $defines, $preprocessor, $idlAttributes);
+
+        foreach my $enumeration (@{$document->enumerations}) {
+            if ($enumeration->type->name eq $enumName) {
+                $cachedExternalEnumerations->{$enumName} = $enumeration;
+                return $enumeration;
+            }
+        }
+    }
+
+    # Fallback: mark it missing to avoid repeated lookups
+    $cachedExternalEnumerations->{$enumName} = undef;
+    return undef;
+}
+
 # An enumeration defined in its own IDL file.
 sub IsExternalEnumType
 {
