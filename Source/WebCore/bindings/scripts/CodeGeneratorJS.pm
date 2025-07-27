@@ -5676,46 +5676,21 @@ sub GenerateAttributeGetterBodyDefinition
             my $enumNameForAttribute = $attribute->extendedAttributes->{Enumerated};
             my $missingValueDefault;
             my $invalidValueDefault;
-            my $emptyValueDefault;
             my @enumValues = ();
 
             unless ($enumNameForAttribute) {
                 die "The {$attributeName} attribute does not have a valid enum specified. Ensure proper usage, e.g., [Reflect, Enumerated=myEnum...]\n";
             }
 
-            ###NEW STUFF
-
-            print Dumper($codeGenerator);
-            my $test = new IDLType({
-                name => $enumNameForAttribute
-            });
-            print "\n\ENUM IS = {$enumNameForAttribute}\n\n";
-
-            my $enum = $codeGenerator->GetEnumByName($enumNameForAttribute);
-
-            if ($enum) {
-                print "✅ Enum found: ", $enum->type->name, "\n";
-                print "Values: ", join(", ", @{$enum->values}), "\n";
-            } else {
-                print "❌ Enum not found for $enumNameForAttribute\n";
-            }
-
-            ###NEW STUFF
-
-            die "done";
-
             my $foundEnum = 0;
             foreach my $enum (@$enumerations) {
-                next unless ref($enum) eq 'IDLEnum';
                 my $enumName = $enum->{'IDLEnum::name'};
                 if ($enumName eq $enumNameForAttribute) {
-                    my $enumExtendedAttributes = $enum->{'IDLEnum::extendedAttributes'};
-                    $missingValueDefault = $enumExtendedAttributes->{'MissingValueDefault'};
+                    my $attributes = $enum->{'IDLEnum::extendedAttributes'};
+                    $missingValueDefault = $attributes->{'MissingValueDefault'};
                     $missingValueDefault = undef if !defined($missingValueDefault) || $missingValueDefault eq '"VALUE_IS_MISSING"';
-                    $invalidValueDefault = $enumExtendedAttributes->{'InvalidValueDefault'};
+                    $invalidValueDefault = $attributes->{'InvalidValueDefault'};
                     $invalidValueDefault = undef if !defined($invalidValueDefault) || $invalidValueDefault eq '"VALUE_IS_MISSING"';
-                    $emptyValueDefault = $enumExtendedAttributes->{'EmptyValueDefault'};
-                    $emptyValueDefault = undef if !defined($emptyValueDefault) || $emptyValueDefault eq '"VALUE_IS_MISSING"';
                     @enumValues = @{ $enum->{'IDLEnum::values'} };
                     
                     $foundEnum = 1;
@@ -5727,34 +5702,24 @@ sub GenerateAttributeGetterBodyDefinition
             }
 
             push(@$outputArray, "    const AtomString& contentAttributeValue = impl.attributeWithoutSynchronization(WebCore::HTMLNames::${attributeName}Attr);\n");
-            push(@$outputArray, "    AtomString returnValue;\n");
+            push(@$outputArray, "    AtomString result;\n");
             push(@$outputArray, "    if (contentAttributeValue.isNull())\n");
             if (defined $missingValueDefault) {
-                push(@$outputArray, "        returnValue = AtomString(\"$missingValueDefault\"_s);\n");
+                push(@$outputArray, "        result = AtomString(\"$missingValueDefault\"_s);\n");
             } else {
-                push(@$outputArray, "        returnValue = nullAtom();\n");
+                push(@$outputArray, "        ;\n");
             }
 
-            if (defined $emptyValueDefault) {
-                push(@$outputArray, "    else if (contentAttributeValue.isEmpty())\n");
-                push(@$outputArray, "        returnValue = AtomString(\"$emptyValueDefault\"_s);\n");
-            }
-
-            my $firstEnumValue = shift @enumValues;
-            push @$outputArray, "    else if (equalLettersIgnoringASCIICase(contentAttributeValue, \"$firstEnumValue\"_s))\n";
-            push @$outputArray, "        returnValue = AtomString(\"$firstEnumValue\"_s);\n";
-            for my $value (@enumValues) {
-                push @$outputArray, "    else if (equalLettersIgnoringASCIICase(contentAttributeValue, \"$value\"_s))\n";
-                push @$outputArray, "        returnValue = AtomString(\"$value\"_s);\n";
-            }
+            push(@$outputArray, "    else if (auto parsed = parseEnumerationFromString<>(contentAttributeValue); parsed) [[likely]]\n");
+            push(@$outputArray, "        result = convertEnumerationToString(*parsed);\n");
             
             push(@$outputArray, "    else\n");
             if (defined $invalidValueDefault) {
-                push(@$outputArray, "        returnValue = AtomString(\"$invalidValueDefault\"_s);\n");
+                push(@$outputArray, "        result = AtomString(\"$invalidValueDefault\"_s);\n");
             } else {
-                push(@$outputArray, "        returnValue = nullAtom();\n");
+                push(@$outputArray, "        result = nullAtom();\n");
             }
-            $toJSExpression = NativeToJSValueUsingReferences($attribute, $interface, "returnValue", $globalObjectReference);
+            $toJSExpression = NativeToJSValueUsingReferences($attribute, $interface, "result", $globalObjectReference);
         }
 
         if (!IsReadonly($attribute)) {
@@ -5975,7 +5940,6 @@ sub GenerateAttributeSetterBodyDefinition
 
             my $toNativeExpression = JSValueToNative($interface, $attribute, "value", $attribute->extendedAttributes->{Conditional}, "&lexicalGlobalObject", "lexicalGlobalObject", "thisObject", $globalObjectReference, $exceptionThrower);
             push(@$outputArray, "    auto nativeValueConversionResult = ${toNativeExpression};\n");
-
             push(@$outputArray, "    if (nativeValueConversionResult.hasException(throwScope)) [[unlikely]]\n");
             push(@$outputArray, "        return false;\n");
 

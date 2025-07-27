@@ -23,7 +23,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-enum ariaOrientationValues { "horizontal", "vertical", "undefined" };
 [MissingValueDefault="none", InvalidValueDefault="none"] enum ariaAutoCompleteValues { "inline", "list", "both", "none" };
 
 // https://w3c.github.io/aria/#idl-interface
@@ -58,7 +57,7 @@ interface mixin AriaAttributes {
     [CEReactions=Needed, Reflect=aria_modal]            attribute DOMString? ariaModal;
     [CEReactions=Needed, Reflect=aria_multiline]        attribute DOMString? ariaMultiLine;
     [CEReactions=Needed, Reflect=aria_multiselectable]  attribute DOMString? ariaMultiSelectable;
-    [CEReactions=Needed, Reflect=aria_orientation, Enumerated=ariaOrientationValues]      attribute DOMString? ariaOrientation;
+    [CEReactions=Needed, Reflect=aria_orientation]      attribute DOMString? ariaOrientation;
     [CEReactions=Needed, CustomGetter, Reflect=aria_owns] attribute FrozenArray<Element>? ariaOwnsElements;
     [CEReactions=Needed, Reflect=aria_placeholder]      attribute DOMString? ariaPlaceholder;
     [CEReactions=Needed, Reflect=aria_posinset]         attribute DOMString? ariaPosInSet;

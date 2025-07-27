@@ -173,11 +173,6 @@
         "DoNotCheckSecurityOnSetter": {
             "contextsAllowed": ["attribute"]
         },
-        "EmptyValueDefault": {
-            "contextsAllowed": ["enum"],
-            "values": ["*"],
-            "notes" :"optional value default for enumerated content attributes when the attribute is present but without a value. Must be used only for content attributes that specify both [Reflect, Enumerated]"
-        },
         "EnabledByQuirk": {
             "contextsAllowed": ["interface", "dictionary", "enum", "attribute", "operation", "constant", "dictionary-member", "includes"],
             "values": ["*"],
