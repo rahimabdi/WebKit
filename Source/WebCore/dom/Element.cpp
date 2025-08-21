@@ -6352,4 +6352,57 @@ void Element::setNumericAttribute(const QualifiedName& attributeName, double val
     setAttributeWithoutSynchronization(attributeName, AtomString::number(value));
 }
 
+#if ENABLE(ENUMERATED_ARIA_ATTRIBUTE_REFLECTION)
+const AtomString& Element::ariaCurrent() const
+{
+    static MainThreadNeverDestroyed<const AtomString> pageValue("page"_s);
+    static MainThreadNeverDestroyed<const AtomString> stepValue("step"_s);
+    static MainThreadNeverDestroyed<const AtomString> locationValue("location"_s);
+    static MainThreadNeverDestroyed<const AtomString> dateValue("date"_s);
+    static MainThreadNeverDestroyed<const AtomString> timeValue("time"_s);
+    static MainThreadNeverDestroyed<const AtomString> trueValue("true"_s);
+    static MainThreadNeverDestroyed<const AtomString> falseValue("false"_s);
+
+    auto value = getAttribute(aria_currentAttr);
+    if (value.isNull())
+        return falseValue.get();
+    if (equalLettersIgnoringASCIICase(value, "page"_s))
+        return pageValue.get();
+    if (equalLettersIgnoringASCIICase(value, "step"_s))
+        return stepValue.get();
+    if (equalLettersIgnoringASCIICase(value, "location"_s))
+        return locationValue.get();
+    if (equalLettersIgnoringASCIICase(value, "date"_s))
+        return dateValue.get();
+    if (equalLettersIgnoringASCIICase(value, "time"_s))
+        return timeValue.get();
+    if (equalLettersIgnoringASCIICase(value, "true"_s))
+        return trueValue.get();
+    if (equalLettersIgnoringASCIICase(value, "false"_s) || value.isEmpty())
+        return falseValue.get();
+    return trueValue.get();
+}
+
+const AtomString& Element::ariaInvalid() const
+{
+    static MainThreadNeverDestroyed<const AtomString> grammarValue("grammar"_s);
+    static MainThreadNeverDestroyed<const AtomString> spellingValue("spelling"_s);
+    static MainThreadNeverDestroyed<const AtomString> trueValue("true"_s);
+    static MainThreadNeverDestroyed<const AtomString> falseValue("false"_s);
+
+    auto value = getAttribute(aria_invalidAttr);
+    if (value.isNull())
+        return falseValue.get();
+    if (equalLettersIgnoringASCIICase(value, "grammar"))
+        return grammarValue.get();
+    if (equalLettersIgnoringASCIICase(value, "spelling"))
+        return spellingValue.get();
+    if (equalLettersIgnoringASCIICase(value, "true"))
+        return trueValue.get();
+    if (equalLettersIgnoringASCIICase(value, "false") || value.isEmpty())
+        return falseValue.get();
+    return trueValue.get();
+}
+#endif // ENABLE(ENUMERATED_ARIA_ATTRIBUTE_REFLECTION)
+
 } // namespace WebCore

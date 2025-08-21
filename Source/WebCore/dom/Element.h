@@ -222,6 +222,32 @@ public:
     enum class TopLayerElementType : bool { Other, Popover };
     HTMLElement* topmostPopoverAncestor(TopLayerElementType topLayerType);
 
+#if ENABLE(ENUMERATED_ARIA_ATTRIBUTE_REFLECTION)
+    // aria-current and aria-invalid use [ReflectSetter] with custom getters rather than [Reflect, Enumerated]
+    // due to the need to support an empty string keyword mapping to "false" that isn't covered by the invalid value default.
+    const AtomString& ariaCurrent() const;
+    const AtomString& ariaInvalid() const;
+
+    enum class AriaAtomicValues : bool { True, False };
+    enum class AriaAutoCompleteValues : uint8_t { Inline, List, Both, None };
+    enum class AriaBusyValues : bool { True, False };
+    enum class AriaCheckedValues : uint8_t { True, False, Mixed };
+    enum class AriaDisabledValues : bool { True, False };
+    enum class AriaExpandedValues : bool { True, False };
+    enum class AriaHasPopupValues : uint8_t { Grid, Tree, Listbox, Dialog, Menu, True, False };
+    enum class AriaHiddenValues : bool { True, False };
+    enum class AriaLiveValues : uint8_t { Polite, Assertive, Off };
+    enum class AriaModalValues : bool { True, False };
+    enum class AriaMultiLineValues : bool { True, False };
+    enum class AriaMultiSelectableValues : bool { True, False };
+    enum class AriaOrientationValues : bool { Horizontal, Vertical };
+    enum class AriaPressedValues : uint8_t { Mixed, True, False };
+    enum class AriaReadOnlyValues : bool { True, False };
+    enum class AriaRequiredValues : bool { True, False };
+    enum class AriaSelectedValues : bool { True, False };
+    enum class AriaSortValues : uint8_t { Ascending, Descending, Other, None };
+#endif // ENABLE(ENUMERATED_ARIA_ATTRIBUTE_REFLECTION)
+
 #if DUMP_NODE_STATISTICS
     bool hasNamedNodeMap() const;
 #endif
